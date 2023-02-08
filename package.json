@@ -2,7 +2,7 @@
   "name": "tumblr-auth-action",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "prepack": "tsc"
   },
