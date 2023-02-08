@@ -1,25 +1,26 @@
 {
-  "name": "tumblr-auth-action",
-  "version": "1.0.0",
-  "description": "",
-  "main": "lib/index.js",
-  "scripts": {
-    "prepack": "tsc"
-  },
-  "keywords": [
-    "tumblr",
-    "auth",
-    "action"
-  ],
-  "author": "Mark Suckerberg",
-  "license": "MIT",
-  "dependencies": {
-    "@actions/core": "^1.10.0",
-    "libsodium-wrappers": "^0.7.10"
-  },
-  "devDependencies": {
-    "@types/libsodium-wrappers": "^0.7.10",
-    "@types/node": "^18.11.19",
-    "typescript": "^4.9.5"
-  }
+	"name": "tumblr-auth-action",
+	"version": "1.0.0",
+	"description": "",
+	"main": "lib/index.js",
+	"scripts": {
+		"build": "tsc",
+		"package": "npm run build && ncc build --source-map --license licenses.txt"
+	},
+	"keywords": [
+		"tumblr",
+		"auth",
+		"action"
+	],
+	"author": "Mark Suckerberg",
+	"license": "MIT",
+	"dependencies": {
+		"@actions/core": "^1.10.0",
+		"libsodium-wrappers": "^0.7.10"
+	},
+	"devDependencies": {
+		"@types/libsodium-wrappers": "^0.7.10",
+		"@types/node": "^18.11.19",
+		"typescript": "^4.9.5"
+	}
 }
