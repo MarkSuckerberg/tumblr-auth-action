@@ -52,7 +52,7 @@ async function handleCIAuth(
 		}),
 	});
 
-	if (!request.ok) throw new Error("Failed to get new token");
+	if (!request.ok) throw new Error(`Failed to get new token: ${request.statusText}`);
 
 	const response = (await request.json()) as {
 		access_token: string;
@@ -74,7 +74,7 @@ async function handleCIAuth(
 		},
 	});
 
-	if (!githubPublicKey.ok) throw new Error("Failed to get public key");
+	if (!githubPublicKey.ok) throw new Error(`Failed to get github public key: ${githubPublicKey.statusText}`);
 
 	const githubPublicKeyResponse = (await githubPublicKey.json()) as {
 		key_id: string;
@@ -113,7 +113,7 @@ async function handleCIAuth(
 		}),
 	});
 
-	if (!githubPublicKey.ok) throw new Error("Failed to update secret");
+	if (!githubPublicKey.ok) throw new Error(`Failed to update secret: ${githubPublicKey.statusText}`);
 
 	return response.access_token;
 }

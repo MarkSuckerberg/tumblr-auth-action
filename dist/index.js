@@ -83,7 +83,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             }),
         });
         if (!request.ok)
-            throw new Error("Failed to get new token");
+            throw new Error(`Failed to get new token: ${request.statusText}`);
         const response = (yield request.json());
         core.debug("Got new token, fetching github public key...");
         //Get the public key from github to encrypt the secret
@@ -97,7 +97,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             },
         });
         if (!githubPublicKey.ok)
-            throw new Error("Failed to get public key");
+            throw new Error(`Failed to get github public key: ${githubPublicKey.statusText}`);
         const githubPublicKeyResponse = (yield githubPublicKey.json());
         //Encrypt the refresh token using the public key
         const secret = yield libsodium_wrappers_1.default.ready.then(() => {
@@ -125,7 +125,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             }),
         });
         if (!githubPublicKey.ok)
-            throw new Error("Failed to update secret");
+            throw new Error(`Failed to update secret: ${githubPublicKey.statusText}`);
         return response.access_token;
     });
 }
