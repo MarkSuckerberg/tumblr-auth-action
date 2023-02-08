@@ -56,6 +56,24 @@ async function handleCIAuth(
 		}),
 	});
 
+	core.debug(
+		JSON.stringify({
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"Accept": "application/json",
+				"User-Agent": "TumblrBotKill/0.0.1",
+				"Authorization": `Bearer ${oldToken}`,
+			},
+			body: JSON.stringify({
+				grant_type: "refresh_token",
+				refresh_token: refreshToken,
+				client_id: clientID,
+				client_secret: clientSecret,
+			}),
+		})
+	);
+	core.debug(JSON.stringify(request));
 	if (!request.ok) throw new Error(`Failed to get new token: ${request.statusText}`);
 
 	const response = (await request.json()) as {
