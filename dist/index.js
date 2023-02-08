@@ -34,11 +34,13 @@ try {
     });
 }
 catch (error) {
-    core_1.default.setFailed(error.message);
+    if (error instanceof Error)
+        core_1.default.setFailed(error.message);
 }
 //You didn't have to make me do this, tumblr
 function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
     return __awaiter(this, void 0, void 0, function* () {
+        core_1.default.debug("Getting new token...");
         const request = yield fetch("https://api.tumblr.com/v2/oauth2/token", {
             method: "POST",
             headers: {
@@ -56,6 +58,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
         if (!request.ok)
             throw new Error("Failed to get new token");
         const response = yield request.json();
+        core_1.default.debug("Got new token, fetching github public key...");
         //Get the public key from github to encrypt the secret
         const githubPublicKey = yield fetch(`${apiURL}/repos/${repo}/actions/secrets/public-key`, {
             method: "GET",
@@ -79,6 +82,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             // Convert encrypted Uint8Array to Base64
             return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
         });
+        core_1.default.debug("Updating secret...");
         //Update the github secret with the new refresh token for the next run
         yield fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
             method: "PUT",

@@ -20,8 +20,8 @@ try {
 	).then(token => {
 		core.setOutput("tumblr-token", token);
 	});
-} catch (error: any) {
-	core.setFailed(error.message);
+} catch (error) {
+	if (error instanceof Error) core.setFailed(error.message);
 }
 
 //You didn't have to make me do this, tumblr
@@ -33,6 +33,7 @@ async function handleCIAuth(
 	clientSecret: string,
 	tokenName: string
 ) {
+	core.debug("Getting new token...");
 	const request = await fetch("https://api.tumblr.com/v2/oauth2/token", {
 		method: "POST",
 		headers: {
@@ -52,6 +53,7 @@ async function handleCIAuth(
 
 	const response = await request.json();
 
+	core.debug("Got new token, fetching github public key...");
 	//Get the public key from github to encrypt the secret
 	const githubPublicKey = await fetch(`${apiURL}/repos/${repo}/actions/secrets/public-key`, {
 		method: "GET",
@@ -83,6 +85,7 @@ async function handleCIAuth(
 		return libsodium.to_base64(encBytes, libsodium.base64_variants.ORIGINAL);
 	});
 
+	core.debug("Updating secret...");
 	//Update the github secret with the new refresh token for the next run
 	await fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
 		method: "PUT",
