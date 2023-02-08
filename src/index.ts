@@ -2,26 +2,28 @@ import core from "@actions/core";
 import libsodium from "libsodium-wrappers";
 const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
 
-try {
-	const secretsToken = core.getInput("secrets-token");
-	const tumblrClientID = core.getInput("tumblr-client-id");
-	const tumblrClientSecret = core.getInput("tumblr-client-secret");
-	const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
-	const repo = core.getInput("repo");
-	const tokenName = core.getInput("token-name");
+async function run() {
+	try {
+		const secretsToken = core.getInput("secrets-token");
+		const tumblrClientID = core.getInput("tumblr-client-id");
+		const tumblrClientSecret = core.getInput("tumblr-client-secret");
+		const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
+		const repo = core.getInput("repo");
+		const tokenName = core.getInput("token-name");
 
-	handleCIAuth(
-		repo,
-		secretsToken,
-		tumblrRefreshToken,
-		tumblrClientID,
-		tumblrClientSecret,
-		tokenName
-	).then(token => {
+		const token = await handleCIAuth(
+			repo,
+			secretsToken,
+			tumblrRefreshToken,
+			tumblrClientID,
+			tumblrClientSecret,
+			tokenName
+		);
+
 		core.setOutput("tumblr-token", token);
-	});
-} catch (error) {
-	if (error instanceof Error) core.setFailed(error.message);
+	} catch (error) {
+		if (error instanceof Error) core.setFailed(error.message);
+	}
 }
 
 //You didn't have to make me do this, tumblr
@@ -105,3 +107,5 @@ async function handleCIAuth(
 
 	return response.access_token;
 }
+
+run();

@@ -22,20 +22,23 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __importDefault(__nccwpck_require__(810));
 const libsodium_wrappers_1 = __importDefault(__nccwpck_require__(397));
 const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
-try {
-    const secretsToken = core_1.default.getInput("secrets-token");
-    const tumblrClientID = core_1.default.getInput("tumblr-client-id");
-    const tumblrClientSecret = core_1.default.getInput("tumblr-client-secret");
-    const tumblrRefreshToken = core_1.default.getInput("tumblr-refresn-token");
-    const repo = core_1.default.getInput("repo");
-    const tokenName = core_1.default.getInput("token-name");
-    handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName).then(token => {
-        core_1.default.setOutput("tumblr-token", token);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const secretsToken = core_1.default.getInput("secrets-token");
+            const tumblrClientID = core_1.default.getInput("tumblr-client-id");
+            const tumblrClientSecret = core_1.default.getInput("tumblr-client-secret");
+            const tumblrRefreshToken = core_1.default.getInput("tumblr-refresn-token");
+            const repo = core_1.default.getInput("repo");
+            const tokenName = core_1.default.getInput("token-name");
+            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
+            core_1.default.setOutput("tumblr-token", token);
+        }
+        catch (error) {
+            if (error instanceof Error)
+                core_1.default.setFailed(error.message);
+        }
     });
-}
-catch (error) {
-    if (error instanceof Error)
-        core_1.default.setFailed(error.message);
 }
 //You didn't have to make me do this, tumblr
 function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
@@ -102,6 +105,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
         return response.access_token;
     });
 }
+run();
 //# sourceMappingURL=index.js.map
 
 /***/ }),
