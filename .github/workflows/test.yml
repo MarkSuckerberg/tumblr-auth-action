@@ -16,4 +16,3 @@ jobs:
           tumblr-client-secret: ${{ secrets.TUMBLR_CLIENT_SECRET }}
           tumblr-refresh-token: ${{ secrets.TUMBLR_TOKEN }}
           token-name: TUMBLR_TOKEN
-          old-token: ${{ secrets.TUMBLR_TOKEN_ACCESS }}

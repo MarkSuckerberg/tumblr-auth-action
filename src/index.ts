@@ -11,7 +11,6 @@ async function run() {
 		const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
 		const repo = core.getInput("repo");
 		const tokenName = core.getInput("token-name");
-		const oldToken = core.getInput("old-token");
 
 		const token = await handleCIAuth(
 			repo,
@@ -19,8 +18,7 @@ async function run() {
 			tumblrRefreshToken,
 			tumblrClientID,
 			tumblrClientSecret,
-			tokenName,
-			oldToken
+			tokenName
 		);
 
 		core.setOutput("tumblr-token", token);
@@ -36,8 +34,7 @@ async function handleCIAuth(
 	refreshToken: string,
 	clientID: string,
 	clientSecret: string,
-	tokenName: string,
-	oldToken: string
+	tokenName: string
 ) {
 	core.debug("Getting new token...");
 	const request = await fetch("https://api.tumblr.com/v2/oauth2/token", {
@@ -46,7 +43,6 @@ async function handleCIAuth(
 			"Content-Type": "application/json",
 			"Accept": "application/json",
 			"User-Agent": "TumblrBotKill/0.0.1",
-			//"Authorization": `Bearer ${oldToken}`,
 		},
 		body: JSON.stringify({
 			grant_type: "refresh_token",
@@ -96,7 +92,7 @@ async function handleCIAuth(
 			"Content-Type": "application/json",
 			"Accept": "application/vnd.github+json",
 			"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-			"Authorization": `token ${secretsToken}`,
+			"Authorization": `Bearer ${secretsToken}`,
 		},
 	});
 
@@ -128,54 +124,21 @@ async function handleCIAuth(
 		return libsodium.to_base64(encBytes, libsodium.base64_variants.ORIGINAL);
 	});
 
-	const accessTokenSecret = await libsodium.ready.then(() => {
-		// Convert Secret & Base64 key to Uint8Array.
-		let binkey = libsodium.from_base64(
-			githubPublicKeyResponse.key,
-			libsodium.base64_variants.ORIGINAL
-		);
-		let binsec = libsodium.from_string(response.access_token);
-
-		//Encrypt the secret using LibSodium
-		let encBytes = libsodium.crypto_box_seal(binsec, binkey);
-
-		// Convert encrypted Uint8Array to Base64
-		return libsodium.to_base64(encBytes, libsodium.base64_variants.ORIGINAL);
-	});
-
 	core.debug("Updating secret...");
 	//Update the github secret with the new refresh token for the next run
-	await fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
+	const secretUpdate = await fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
 		method: "PUT",
 		headers: {
 			"Content-Type": "application/json",
 			"Accept": "application/vnd.github+json",
 			"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-			"Authorization": `token ${secretsToken}`,
+			"Authorization": `Bearer ${secretsToken}`,
 		},
 		body: JSON.stringify({
 			encrypted_value: refreshTokenSecret,
 			key_id: githubPublicKeyResponse.key_id,
 		}),
 	});
-
-	//Update the github secret with the new refresh token for the next run
-	const secretUpdate = await fetch(
-		`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`,
-		{
-			method: "PUT",
-			headers: {
-				"Content-Type": "application/json",
-				"Accept": "application/vnd.github+json",
-				"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-				"Authorization": `token ${secretsToken}`,
-			},
-			body: JSON.stringify({
-				encrypted_value: accessTokenSecret,
-				key_id: githubPublicKeyResponse.key_id,
-			}),
-		}
-	);
 
 	if (!secretUpdate.ok)
 		throw new Error(

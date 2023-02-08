@@ -55,8 +55,7 @@ function run() {
             const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
             const repo = core.getInput("repo");
             const tokenName = core.getInput("token-name");
-            const oldToken = core.getInput("old-token");
-            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName, oldToken);
+            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
             core.setOutput("tumblr-token", token);
         }
         catch (error) {
@@ -66,7 +65,7 @@ function run() {
     });
 }
 //You didn't have to make me do this, tumblr
-function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName, oldToken) {
+function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Getting new token...");
         const request = yield (0, node_fetch_1.default)("https://api.tumblr.com/v2/oauth2/token", {
@@ -75,7 +74,6 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "User-Agent": "TumblrBotKill/0.0.1",
-                //"Authorization": `Bearer ${oldToken}`,
             },
             body: JSON.stringify({
                 grant_type: "refresh_token",
@@ -109,7 +107,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Content-Type": "application/json",
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-                "Authorization": `token ${secretsToken}`,
+                "Authorization": `Bearer ${secretsToken}`,
             },
         });
         if (!githubPublicKey.ok)
@@ -125,41 +123,18 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             // Convert encrypted Uint8Array to Base64
             return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
         });
-        const accessTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
-            // Convert Secret & Base64 key to Uint8Array.
-            let binkey = libsodium_wrappers_1.default.from_base64(githubPublicKeyResponse.key, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
-            let binsec = libsodium_wrappers_1.default.from_string(response.access_token);
-            //Encrypt the secret using LibSodium
-            let encBytes = libsodium_wrappers_1.default.crypto_box_seal(binsec, binkey);
-            // Convert encrypted Uint8Array to Base64
-            return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
-        });
         core.debug("Updating secret...");
         //Update the github secret with the new refresh token for the next run
-        yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
+        const secretUpdate = yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-                "Authorization": `token ${secretsToken}`,
+                "Authorization": `Bearer ${secretsToken}`,
             },
             body: JSON.stringify({
                 encrypted_value: refreshTokenSecret,
-                key_id: githubPublicKeyResponse.key_id,
-            }),
-        });
-        //Update the github secret with the new refresh token for the next run
-        const secretUpdate = yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/vnd.github+json",
-                "User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-                "Authorization": `token ${secretsToken}`,
-            },
-            body: JSON.stringify({
-                encrypted_value: accessTokenSecret,
                 key_id: githubPublicKeyResponse.key_id,
             }),
         });
