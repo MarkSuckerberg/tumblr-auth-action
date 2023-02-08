@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import libsodium from "libsodium-wrappers";
+import fetch from "node-fetch";
 const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
 
 async function run() {
@@ -53,7 +54,13 @@ async function handleCIAuth(
 
 	if (!request.ok) throw new Error("Failed to get new token");
 
-	const response = await request.json();
+	const response = (await request.json()) as {
+		access_token: string;
+		refresh_token: string;
+		expires_in: number;
+		token_type: string;
+		scope: string;
+	};
 
 	core.debug("Got new token, fetching github public key...");
 	//Get the public key from github to encrypt the secret
@@ -69,7 +76,10 @@ async function handleCIAuth(
 
 	if (!githubPublicKey.ok) throw new Error("Failed to get public key");
 
-	const githubPublicKeyResponse = await githubPublicKey.json();
+	const githubPublicKeyResponse = (await githubPublicKey.json()) as {
+		key_id: string;
+		key: string;
+	};
 
 	//Encrypt the refresh token using the public key
 	const secret = await libsodium.ready.then(() => {
