@@ -1,5 +1,6 @@
 import core from "@actions/core";
 import libsodium from "libsodium-wrappers";
+const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
 
 try {
 	const secretsToken = core.getInput("secrets-token");
@@ -7,12 +8,18 @@ try {
 	const tumblrClientSecret = core.getInput("tumblr-client-secret");
 	const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
 	const repo = core.getInput("repo");
+	const tokenName = core.getInput("token-name");
 
-	handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret).then(
-		token => {
-			core.setOutput("tumblr-token", token);
-		}
-	);
+	handleCIAuth(
+		repo,
+		secretsToken,
+		tumblrRefreshToken,
+		tumblrClientID,
+		tumblrClientSecret,
+		tokenName
+	).then(token => {
+		core.setOutput("tumblr-token", token);
+	});
 } catch (error: any) {
 	core.setFailed(error.message);
 }
@@ -23,7 +30,8 @@ async function handleCIAuth(
 	secretsToken: string,
 	refreshToken: string,
 	clientID: string,
-	clientSecret: string
+	clientSecret: string,
+	tokenName: string
 ) {
 	const request = await fetch("https://api.tumblr.com/v2/oauth2/token", {
 		method: "POST",
@@ -40,25 +48,24 @@ async function handleCIAuth(
 		}),
 	});
 
+	if (!request.ok) throw new Error("Failed to get new token");
+
 	const response = await request.json();
-	console.log(JSON.stringify(response));
 
 	//Get the public key from github to encrypt the secret
-	const githubPublicKey = await fetch(
-		`https://api.github.com/repos/${repo}/actions/secrets/public-key`,
-		{
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				"Accept": "application/vnd.github+json",
-				"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-				"Authorization": `token ${secretsToken}`,
-			},
-		}
-	);
+	const githubPublicKey = await fetch(`${apiURL}/repos/${repo}/actions/secrets/public-key`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			"Accept": "application/vnd.github+json",
+			"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
+			"Authorization": `token ${secretsToken}`,
+		},
+	});
+
+	if (!githubPublicKey.ok) throw new Error("Failed to get public key");
 
 	const githubPublicKeyResponse = await githubPublicKey.json();
-	console.log(JSON.stringify(githubPublicKeyResponse));
 
 	//Encrypt the refresh token using the public key
 	const secret = await libsodium.ready.then(() => {
@@ -77,22 +84,21 @@ async function handleCIAuth(
 	});
 
 	//Update the github secret with the new refresh token for the next run
-	await fetch(
-		"https://api.github.com/repos/MarkSuckerberg/typeblr/actions/secrets/TUMBLR_REFRESH_TOKEN",
-		{
-			method: "PUT",
-			headers: {
-				"Content-Type": "application/json",
-				"Accept": "application/vnd.github+json",
-				"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-				"Authorization": `token ${secretsToken}`,
-			},
-			body: JSON.stringify({
-				encrypted_value: secret,
-				key_id: githubPublicKeyResponse.key_id,
-			}),
-		}
-	);
+	await fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+			"Accept": "application/vnd.github+json",
+			"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
+			"Authorization": `token ${secretsToken}`,
+		},
+		body: JSON.stringify({
+			encrypted_value: secret,
+			key_id: githubPublicKeyResponse.key_id,
+		}),
+	});
+
+	if (!githubPublicKey.ok) throw new Error("Failed to update secret");
 
 	return response.access_token;
 }

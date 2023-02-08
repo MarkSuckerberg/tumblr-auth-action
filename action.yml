@@ -13,6 +13,10 @@ inputs:
   tumblr-refresh-token:
     description: 'Tumblr Refresh Token'
     required: true
+  token-name:
+    description: 'Name of the secret to store the Access Token in'
+    required: false
+    default: "TUMBLR_TOKEN"
 outputs:
   tumblr-token:
     description: 'Tumblr Access Token'

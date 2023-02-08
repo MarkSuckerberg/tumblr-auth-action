@@ -1,0 +1,18 @@
+name: 'Test action'
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+        with:
+          secrets-token: ${{ secrets.SECRETS_TOKEN }}
+          tumblr-client-id: ${{ secrets.TUMBLR_CLIENT_ID }}
+          tumblr-client-secret: ${{ secrets.TUMBLR_CLIENT_SECRET }}
+          tumblr-refresh-token: ${{ secrets.TUMBLR_REFRESH_TOKEN }}
+          token-name: TUMBLR_TOKEN
