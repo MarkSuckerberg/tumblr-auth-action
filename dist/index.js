@@ -75,7 +75,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "User-Agent": "TumblrBotKill/0.0.1",
-                "Authorization": `Bearer ${oldToken}`,
+                //"Authorization": `Bearer ${oldToken}`,
             },
             body: JSON.stringify({
                 grant_type: "refresh_token",
