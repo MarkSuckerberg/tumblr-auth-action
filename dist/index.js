@@ -52,7 +52,7 @@ function run() {
             const secretsToken = core.getInput("secrets-token");
             const tumblrClientID = core.getInput("tumblr-client-id");
             const tumblrClientSecret = core.getInput("tumblr-client-secret");
-            const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
+            const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
             const repo = core.getInput("repo");
             const tokenName = core.getInput("token-name");
             const oldToken = core.getInput("old-token");
@@ -114,7 +114,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             },
         });
         if (!githubPublicKey.ok)
-            throw new Error(`Failed to get github public key: ${githubPublicKey.statusText}`);
+            throw new Error(`Failed to get github public key: ${request.status} ${request.statusText} ${yield request.text()}`);
         const githubPublicKeyResponse = (yield githubPublicKey.json());
         //Encrypt the refresh token using the public key
         const refreshTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
@@ -165,7 +165,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             }),
         });
         if (!githubPublicKey.ok)
-            throw new Error(`Failed to update secret: ${githubPublicKey.statusText}`);
+            throw new Error(`Failed to update secret: ${githubPublicKey.statusText} ${request.status} ${request.statusText} ${yield request.text()}`);
         return response.access_token;
     });
 }

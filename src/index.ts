@@ -8,7 +8,7 @@ async function run() {
 		const secretsToken = core.getInput("secrets-token");
 		const tumblrClientID = core.getInput("tumblr-client-id");
 		const tumblrClientSecret = core.getInput("tumblr-client-secret");
-		const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
+		const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
 		const repo = core.getInput("repo");
 		const tokenName = core.getInput("token-name");
 		const oldToken = core.getInput("old-token");
@@ -102,7 +102,11 @@ async function handleCIAuth(
 	});
 
 	if (!githubPublicKey.ok)
-		throw new Error(`Failed to get github public key: ${githubPublicKey.statusText}`);
+		throw new Error(
+			`Failed to get github public key: ${request.status} ${
+				request.statusText
+			} ${await request.text()}`
+		);
 
 	const githubPublicKeyResponse = (await githubPublicKey.json()) as {
 		key_id: string;
@@ -172,7 +176,11 @@ async function handleCIAuth(
 	});
 
 	if (!githubPublicKey.ok)
-		throw new Error(`Failed to update secret: ${githubPublicKey.statusText}`);
+		throw new Error(
+			`Failed to update secret: ${githubPublicKey.statusText} ${request.status} ${
+				request.statusText
+			} ${await request.text()}`
+		);
 
 	return response.access_token;
 }
