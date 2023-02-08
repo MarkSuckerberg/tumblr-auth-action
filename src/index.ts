@@ -73,8 +73,13 @@ async function handleCIAuth(
 			}),
 		})
 	);
-	core.debug(JSON.stringify(request));
-	if (!request.ok) throw new Error(`Failed to get new token: ${request.statusText}`);
+
+	if (!request.ok)
+		throw new Error(
+			`Failed to get new token: ${request.status} ${
+				request.statusText
+			} ${await request.text()}`
+		);
 
 	const response = (await request.json()) as {
 		access_token: string;

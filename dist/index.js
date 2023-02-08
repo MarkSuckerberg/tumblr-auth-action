@@ -99,9 +99,8 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 refresh_token: refreshToken,
             }),
         }));
-        core.debug(JSON.stringify(request));
         if (!request.ok)
-            throw new Error(`Failed to get new token: ${request.statusText}`);
+            throw new Error(`Failed to get new token: ${request.status} ${request.statusText} ${yield request.text()}`);
         const response = (yield request.json());
         core.debug("Got new token, fetching github public key...");
         //Get the public key from github to encrypt the secret
