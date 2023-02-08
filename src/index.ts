@@ -67,9 +67,9 @@ async function handleCIAuth(
 			},
 			body: JSON.stringify({
 				grant_type: "refresh_token",
-				refresh_token: refreshToken,
 				client_id: clientID,
 				client_secret: clientSecret,
+				refresh_token: refreshToken,
 			}),
 		})
 	);
