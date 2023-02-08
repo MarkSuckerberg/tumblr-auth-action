@@ -1,0 +1,21 @@
+name: 'Tumblr Authentication Action'
+description: 'Gets a Tumblr Access Token from a Tumblr Refresh Token, and updates the Refresh Token secret for future use'
+inputs:
+  secrets-token:
+    description: 'Secrets Token, most include Read & Write permissions to Secrets'
+    required: true
+  tumblr-client-id:
+    description: 'Tumblr Client ID'
+    required: true
+  tumblr-client-secret:
+    description: 'Tumblr Client Secret'
+    required: true
+  tumblr-refresh-token:
+    description: 'Tumblr Refresh Token'
+    required: true
+outputs:
+  tumblr-token:
+    description: 'Tumblr Access Token'
+runs:
+  using: 'node16'
+  main: 'lib/index.js'
