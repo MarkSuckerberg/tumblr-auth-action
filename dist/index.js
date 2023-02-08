@@ -55,7 +55,8 @@ function run() {
             const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
             const repo = core.getInput("repo");
             const tokenName = core.getInput("token-name");
-            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
+            const oldToken = core.getInput("old-token");
+            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName, oldToken);
             core.setOutput("tumblr-token", token);
         }
         catch (error) {
@@ -65,7 +66,7 @@ function run() {
     });
 }
 //You didn't have to make me do this, tumblr
-function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
+function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName, oldToken) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Getting new token...");
         const request = yield (0, node_fetch_1.default)("https://api.tumblr.com/v2/oauth2/token", {
@@ -74,6 +75,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "User-Agent": "TumblrBotKill/0.0.1",
+                "Authorization": `Bearer ${oldToken}`,
             },
             body: JSON.stringify({
                 grant_type: "refresh_token",
@@ -100,10 +102,19 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             throw new Error(`Failed to get github public key: ${githubPublicKey.statusText}`);
         const githubPublicKeyResponse = (yield githubPublicKey.json());
         //Encrypt the refresh token using the public key
-        const secret = yield libsodium_wrappers_1.default.ready.then(() => {
+        const refreshTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
             // Convert Secret & Base64 key to Uint8Array.
             let binkey = libsodium_wrappers_1.default.from_base64(githubPublicKeyResponse.key, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
             let binsec = libsodium_wrappers_1.default.from_string(response.refresh_token);
+            //Encrypt the secret using LibSodium
+            let encBytes = libsodium_wrappers_1.default.crypto_box_seal(binsec, binkey);
+            // Convert encrypted Uint8Array to Base64
+            return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
+        });
+        const accessTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
+            // Convert Secret & Base64 key to Uint8Array.
+            let binkey = libsodium_wrappers_1.default.from_base64(githubPublicKeyResponse.key, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
+            let binsec = libsodium_wrappers_1.default.from_string(response.access_token);
             //Encrypt the secret using LibSodium
             let encBytes = libsodium_wrappers_1.default.crypto_box_seal(binsec, binkey);
             // Convert encrypted Uint8Array to Base64
@@ -120,7 +131,21 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Authorization": `token ${secretsToken}`,
             },
             body: JSON.stringify({
-                encrypted_value: secret,
+                encrypted_value: refreshTokenSecret,
+                key_id: githubPublicKeyResponse.key_id,
+            }),
+        });
+        //Update the github secret with the new refresh token for the next run
+        yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "X-GitHub-Api-Version: 2022-11-28",
+                "Authorization": `token ${secretsToken}`,
+            },
+            body: JSON.stringify({
+                encrypted_value: refreshTokenSecret,
                 key_id: githubPublicKeyResponse.key_id,
             }),
         });

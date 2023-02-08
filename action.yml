@@ -17,6 +17,9 @@ inputs:
     description: 'Name of the secret to store the Access Token in'
     required: false
     default: "TUMBLR_TOKEN"
+  old-token:
+    description: 'Old Access Token'
+    required: true
 outputs:
   tumblr-token:
     description: 'Tumblr Access Token'
