@@ -84,7 +84,7 @@ async function handleCIAuth(
 		scope: string;
 	};
 
-	core.debug("Got new token, fetching github public key...");
+	core.debug(`Got new token, fetching github public key at url ${apiURL}/repos/${repo}/actions/secrets/public-key...`);
 	//Get the public key from github to encrypt the secret
 	const githubPublicKey = await fetch(`${apiURL}/repos/${repo}/actions/secrets/public-key`, {
 		method: "GET",
