@@ -53,9 +53,9 @@ function run() {
             const tumblrClientID = core.getInput("tumblr-client-id");
             const tumblrClientSecret = core.getInput("tumblr-client-secret");
             const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
-            const repo = core.getInput("repo");
+            const repository = core.getInput("repository");
             const tokenName = core.getInput("token-name");
-            const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
+            const token = yield handleCIAuth(repository, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
             core.setOutput("tumblr-token", token);
         }
         catch (error) {

@@ -9,11 +9,11 @@ async function run() {
 		const tumblrClientID = core.getInput("tumblr-client-id");
 		const tumblrClientSecret = core.getInput("tumblr-client-secret");
 		const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
-		const repo = core.getInput("repo");
+		const repository = core.getInput("repository");
 		const tokenName = core.getInput("token-name");
 
 		const token = await handleCIAuth(
-			repo,
+			repository,
 			secretsToken,
 			tumblrRefreshToken,
 			tumblrClientID,

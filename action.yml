@@ -17,6 +17,10 @@ inputs:
     description: 'Name of the secret to store the Access Token in'
     required: false
     default: "TUMBLR_TOKEN"
+  repository:
+    description: Repository name
+    default: ${{ github.repository }}
+    required: false
 outputs:
   tumblr-token:
     description: 'Tumblr Access Token'
