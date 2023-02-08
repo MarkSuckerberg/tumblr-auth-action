@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          secrets-token: ${{ secrets.SECRETS_TOKEN }}
+          secrets-token: ${{ secrets.SECRETS_ACCESS_TOKEN }}
           tumblr-client-id: ${{ secrets.TUMBLR_CLIENT_ID }}
           tumblr-client-secret: ${{ secrets.TUMBLR_CLIENT_SECRET }}
           tumblr-refresh-token: ${{ secrets.TUMBLR_TOKEN }}
