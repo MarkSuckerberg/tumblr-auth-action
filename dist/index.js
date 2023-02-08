@@ -6,6 +6,29 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -19,31 +42,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core_1 = __importDefault(__nccwpck_require__(810));
+const core = __importStar(__nccwpck_require__(810));
 const libsodium_wrappers_1 = __importDefault(__nccwpck_require__(397));
 const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const secretsToken = core_1.default.getInput("secrets-token");
-            const tumblrClientID = core_1.default.getInput("tumblr-client-id");
-            const tumblrClientSecret = core_1.default.getInput("tumblr-client-secret");
-            const tumblrRefreshToken = core_1.default.getInput("tumblr-refresn-token");
-            const repo = core_1.default.getInput("repo");
-            const tokenName = core_1.default.getInput("token-name");
+            const secretsToken = core.getInput("secrets-token");
+            const tumblrClientID = core.getInput("tumblr-client-id");
+            const tumblrClientSecret = core.getInput("tumblr-client-secret");
+            const tumblrRefreshToken = core.getInput("tumblr-refresn-token");
+            const repo = core.getInput("repo");
+            const tokenName = core.getInput("token-name");
             const token = yield handleCIAuth(repo, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
-            core_1.default.setOutput("tumblr-token", token);
+            core.setOutput("tumblr-token", token);
         }
         catch (error) {
             if (error instanceof Error)
-                core_1.default.setFailed(error.message);
+                core.setFailed(error.message);
         }
     });
 }
 //You didn't have to make me do this, tumblr
 function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
     return __awaiter(this, void 0, void 0, function* () {
-        core_1.default.debug("Getting new token...");
+        core.debug("Getting new token...");
         const request = yield fetch("https://api.tumblr.com/v2/oauth2/token", {
             method: "POST",
             headers: {
@@ -61,7 +84,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
         if (!request.ok)
             throw new Error("Failed to get new token");
         const response = yield request.json();
-        core_1.default.debug("Got new token, fetching github public key...");
+        core.debug("Got new token, fetching github public key...");
         //Get the public key from github to encrypt the secret
         const githubPublicKey = yield fetch(`${apiURL}/repos/${repo}/actions/secrets/public-key`, {
             method: "GET",
@@ -85,7 +108,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             // Convert encrypted Uint8Array to Base64
             return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
         });
-        core_1.default.debug("Updating secret...");
+        core.debug("Updating secret...");
         //Update the github secret with the new refresh token for the next run
         yield fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
             method: "PUT",

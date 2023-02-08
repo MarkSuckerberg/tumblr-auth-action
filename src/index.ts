@@ -1,4 +1,4 @@
-import core from "@actions/core";
+import * as core from "@actions/core";
 import libsodium from "libsodium-wrappers";
 const apiURL = process.env["GITHUB_API_URL"] || "https://api.github.com";
 
