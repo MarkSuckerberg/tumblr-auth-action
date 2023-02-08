@@ -90,7 +90,6 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "User-Agent": "TumblrBotKill/0.0.1",
-                "Authorization": `Bearer ${oldToken}`,
             },
             body: JSON.stringify({
                 grant_type: "refresh_token",
@@ -114,7 +113,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             },
         });
         if (!githubPublicKey.ok)
-            throw new Error(`Failed to get github public key: ${request.status} ${request.statusText} ${yield request.text()}`);
+            throw new Error(`Failed to get github public key: ${githubPublicKey.status} ${githubPublicKey.statusText} ${yield githubPublicKey.text()}`);
         const githubPublicKeyResponse = (yield githubPublicKey.json());
         //Encrypt the refresh token using the public key
         const refreshTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
@@ -151,7 +150,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             }),
         });
         //Update the github secret with the new refresh token for the next run
-        yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`, {
+        const secretUpdate = yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -160,12 +159,12 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 "Authorization": `token ${secretsToken}`,
             },
             body: JSON.stringify({
-                encrypted_value: refreshTokenSecret,
+                encrypted_value: accessTokenSecret,
                 key_id: githubPublicKeyResponse.key_id,
             }),
         });
-        if (!githubPublicKey.ok)
-            throw new Error(`Failed to update secret: ${githubPublicKey.statusText} ${request.status} ${request.statusText} ${yield request.text()}`);
+        if (!secretUpdate.ok)
+            throw new Error(`Failed to update secret: ${secretUpdate.statusText} ${secretUpdate.status} ${secretUpdate.statusText} ${yield secretUpdate.text()}`);
         return response.access_token;
     });
 }

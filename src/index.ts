@@ -63,7 +63,6 @@ async function handleCIAuth(
 				"Content-Type": "application/json",
 				"Accept": "application/json",
 				"User-Agent": "TumblrBotKill/0.0.1",
-				"Authorization": `Bearer ${oldToken}`,
 			},
 			body: JSON.stringify({
 				grant_type: "refresh_token",
@@ -103,9 +102,9 @@ async function handleCIAuth(
 
 	if (!githubPublicKey.ok)
 		throw new Error(
-			`Failed to get github public key: ${request.status} ${
-				request.statusText
-			} ${await request.text()}`
+			`Failed to get github public key: ${githubPublicKey.status} ${
+				githubPublicKey.statusText
+			} ${await githubPublicKey.text()}`
 		);
 
 	const githubPublicKeyResponse = (await githubPublicKey.json()) as {
@@ -161,25 +160,28 @@ async function handleCIAuth(
 	});
 
 	//Update the github secret with the new refresh token for the next run
-	await fetch(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`, {
-		method: "PUT",
-		headers: {
-			"Content-Type": "application/json",
-			"Accept": "application/vnd.github+json",
-			"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
-			"Authorization": `token ${secretsToken}`,
-		},
-		body: JSON.stringify({
-			encrypted_value: refreshTokenSecret,
-			key_id: githubPublicKeyResponse.key_id,
-		}),
-	});
+	const secretUpdate = await fetch(
+		`${apiURL}/repos/${repo}/actions/secrets/${tokenName}_ACCESS`,
+		{
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				"Accept": "application/vnd.github+json",
+				"User-Agent": "X-GitHub-Api-Version: 2022-11-28",
+				"Authorization": `token ${secretsToken}`,
+			},
+			body: JSON.stringify({
+				encrypted_value: accessTokenSecret,
+				key_id: githubPublicKeyResponse.key_id,
+			}),
+		}
+	);
 
-	if (!githubPublicKey.ok)
+	if (!secretUpdate.ok)
 		throw new Error(
-			`Failed to update secret: ${githubPublicKey.statusText} ${request.status} ${
-				request.statusText
-			} ${await request.text()}`
+			`Failed to update secret: ${secretUpdate.statusText} ${secretUpdate.status} ${
+				secretUpdate.statusText
+			} ${await secretUpdate.text()}`
 		);
 
 	return response.access_token;
