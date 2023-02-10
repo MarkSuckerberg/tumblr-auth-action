@@ -22,6 +22,8 @@ async function run() {
 		);
 
 		core.setOutput("tumblr-token", token);
+		core.setSecret(token);
+		core.exportVariable("TUMBLR_TOKEN", token)
 	} catch (error) {
 		if (error instanceof Error) core.setFailed(error.message);
 	}
@@ -51,23 +53,6 @@ async function handleCIAuth(
 			client_secret: clientSecret,
 		}),
 	});
-
-	core.debug(
-		JSON.stringify({
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"Accept": "application/json",
-				"User-Agent": "TumblrBotKill/0.0.1",
-			},
-			body: JSON.stringify({
-				grant_type: "refresh_token",
-				client_id: clientID,
-				client_secret: clientSecret,
-				refresh_token: refreshToken,
-			}),
-		})
-	);
 
 	if (!request.ok)
 		throw new Error(
@@ -109,20 +94,7 @@ async function handleCIAuth(
 	};
 
 	//Encrypt the refresh token using the public key
-	const refreshTokenSecret = await libsodium.ready.then(() => {
-		// Convert Secret & Base64 key to Uint8Array.
-		let binkey = libsodium.from_base64(
-			githubPublicKeyResponse.key,
-			libsodium.base64_variants.ORIGINAL
-		);
-		let binsec = libsodium.from_string(response.refresh_token);
-
-		//Encrypt the secret using LibSodium
-		let encBytes = libsodium.crypto_box_seal(binsec, binkey);
-
-		// Convert encrypted Uint8Array to Base64
-		return libsodium.to_base64(encBytes, libsodium.base64_variants.ORIGINAL);
-	});
+	const refreshTokenSecret = await encryptSecret(response.refresh_token, githubPublicKeyResponse.key);
 
 	core.debug("Updating secret...");
 	//Update the github secret with the new refresh token for the next run
@@ -148,6 +120,20 @@ async function handleCIAuth(
 		);
 
 	return response.access_token;
+}
+
+async function encryptSecret(secret: string, key: string) {
+	return libsodium.ready.then(() => {
+		// Convert Secret & Base64 key to Uint8Array.
+		let binkey = libsodium.from_base64(key, libsodium.base64_variants.ORIGINAL);
+		let binsec = libsodium.from_string(secret);
+
+		//Encrypt the secret using LibSodium
+		let encBytes = libsodium.crypto_box_seal(binsec, binkey);
+
+		// Convert encrypted Uint8Array to Base64
+		return libsodium.to_base64(encBytes, libsodium.base64_variants.ORIGINAL);
+	});
 }
 
 run();
