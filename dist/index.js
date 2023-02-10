@@ -57,6 +57,8 @@ function run() {
             const tokenName = core.getInput("token-name");
             const token = yield handleCIAuth(repository, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
             core.setOutput("tumblr-token", token);
+            core.setSecret(token);
+            core.exportVariable("TUMBLR_TOKEN", token);
         }
         catch (error) {
             if (error instanceof Error)
@@ -82,20 +84,6 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
                 client_secret: clientSecret,
             }),
         });
-        core.debug(JSON.stringify({
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "User-Agent": "TumblrBotKill/0.0.1",
-            },
-            body: JSON.stringify({
-                grant_type: "refresh_token",
-                client_id: clientID,
-                client_secret: clientSecret,
-                refresh_token: refreshToken,
-            }),
-        }));
         if (!request.ok)
             throw new Error(`Failed to get new token: ${request.status} ${request.statusText} ${yield request.text()}`);
         const response = (yield request.json());
@@ -114,15 +102,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             throw new Error(`Failed to get github public key: ${githubPublicKey.status} ${githubPublicKey.statusText} ${yield githubPublicKey.text()}`);
         const githubPublicKeyResponse = (yield githubPublicKey.json());
         //Encrypt the refresh token using the public key
-        const refreshTokenSecret = yield libsodium_wrappers_1.default.ready.then(() => {
-            // Convert Secret & Base64 key to Uint8Array.
-            let binkey = libsodium_wrappers_1.default.from_base64(githubPublicKeyResponse.key, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
-            let binsec = libsodium_wrappers_1.default.from_string(response.refresh_token);
-            //Encrypt the secret using LibSodium
-            let encBytes = libsodium_wrappers_1.default.crypto_box_seal(binsec, binkey);
-            // Convert encrypted Uint8Array to Base64
-            return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
-        });
+        const refreshTokenSecret = yield encryptSecret(response.refresh_token, githubPublicKeyResponse.key);
         core.debug("Updating secret...");
         //Update the github secret with the new refresh token for the next run
         const secretUpdate = yield (0, node_fetch_1.default)(`${apiURL}/repos/${repo}/actions/secrets/${tokenName}`, {
@@ -141,6 +121,19 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
         if (!secretUpdate.ok)
             throw new Error(`Failed to update secret: ${secretUpdate.statusText} ${secretUpdate.status} ${secretUpdate.statusText} ${yield secretUpdate.text()}`);
         return response.access_token;
+    });
+}
+function encryptSecret(secret, key) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return libsodium_wrappers_1.default.ready.then(() => {
+            // Convert Secret & Base64 key to Uint8Array.
+            let binkey = libsodium_wrappers_1.default.from_base64(key, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
+            let binsec = libsodium_wrappers_1.default.from_string(secret);
+            //Encrypt the secret using LibSodium
+            let encBytes = libsodium_wrappers_1.default.crypto_box_seal(binsec, binkey);
+            // Convert encrypted Uint8Array to Base64
+            return libsodium_wrappers_1.default.to_base64(encBytes, libsodium_wrappers_1.default.base64_variants.ORIGINAL);
+        });
     });
 }
 run();
