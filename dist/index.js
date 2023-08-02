@@ -55,7 +55,8 @@ function run() {
             const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
             const repository = core.getInput("repository");
             const tokenName = core.getInput("token-name");
-            const token = yield handleCIAuth(repository, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName);
+            const userAgent = core.getInput("user-agent");
+            const token = yield handleCIAuth(repository, secretsToken, tumblrRefreshToken, tumblrClientID, tumblrClientSecret, tokenName, userAgent);
             core.setOutput("tumblr-token", token);
             core.setSecret(token);
             core.exportVariable("TUMBLR_TOKEN", token);
@@ -67,7 +68,7 @@ function run() {
     });
 }
 //You didn't have to make me do this, tumblr
-function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName) {
+function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, tokenName, userAgent = "Typeble-Auth/1.1.0") {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Getting new token...");
         const request = yield (0, node_fetch_1.default)("https://api.tumblr.com/v2/oauth2/token", {
@@ -75,7 +76,7 @@ function handleCIAuth(repo, secretsToken, refreshToken, clientID, clientSecret, 
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "User-Agent": "TumblrBotKill/0.0.1",
+                "User-Agent": userAgent,
             },
             body: JSON.stringify({
                 grant_type: "refresh_token",

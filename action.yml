@@ -21,6 +21,9 @@ inputs:
     description: Repository name
     default: ${{ github.repository }}
     required: false
+  user-agent:
+    description: User Agent
+    required: false
 outputs:
   tumblr-token:
     description: 'Tumblr Access Token'

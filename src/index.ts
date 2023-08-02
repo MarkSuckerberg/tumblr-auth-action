@@ -11,6 +11,7 @@ async function run() {
 		const tumblrRefreshToken = core.getInput("tumblr-refresh-token");
 		const repository = core.getInput("repository");
 		const tokenName = core.getInput("token-name");
+		const userAgent = core.getInput("user-agent");
 
 		const token = await handleCIAuth(
 			repository,
@@ -18,7 +19,8 @@ async function run() {
 			tumblrRefreshToken,
 			tumblrClientID,
 			tumblrClientSecret,
-			tokenName
+			tokenName,
+			userAgent
 		);
 
 		core.setOutput("tumblr-token", token);
@@ -36,7 +38,8 @@ async function handleCIAuth(
 	refreshToken: string,
 	clientID: string,
 	clientSecret: string,
-	tokenName: string
+	tokenName: string,
+	userAgent: string = "Typeble-Auth/1.1.0"
 ) {
 	core.debug("Getting new token...");
 	const request = await fetch("https://api.tumblr.com/v2/oauth2/token", {
@@ -44,7 +47,7 @@ async function handleCIAuth(
 		headers: {
 			"Content-Type": "application/json",
 			"Accept": "application/json",
-			"User-Agent": "Typeble-Auth/1.1.0",
+			"User-Agent": userAgent,
 		},
 		body: JSON.stringify({
 			grant_type: "refresh_token",
