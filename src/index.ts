@@ -44,7 +44,7 @@ async function handleCIAuth(
 		headers: {
 			"Content-Type": "application/json",
 			"Accept": "application/json",
-			"User-Agent": "TumblrBotKill/0.0.1",
+			"User-Agent": "Typeble-Auth/1.1.0",
 		},
 		body: JSON.stringify({
 			grant_type: "refresh_token",
